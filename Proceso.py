@@ -36,7 +36,8 @@ class Proceso:
     def getRafaga(self):
         return self.__rafaga_cpu
 
-
+    def getRafagaRestante(self):
+            return self.__rafaga_restante
     
 
     def cambio_estado(self,estado):
@@ -49,8 +50,12 @@ class Proceso:
     def rafaga_CPU(self, rafaga):
         self.__rafaga_cpu = rafaga
 
-    def rafaga_restante(self, rafaga_restante):
-        self.__rafaga_restante = rafaga_restante
+
+    def rafaga_CPU_restante(self, rafaga):
+            self.__rafaga_restante = rafaga
+
+
+
 
     def admicion(self):
         if self.__estado_actual != Estados.EST_NUEVO:
@@ -59,24 +64,49 @@ class Proceso:
         
         self.cambio_estado(Estados.EST_LISTO)
 
-    def ejecucion(self):
+    def ejecucion(self,Quantum):
         if self.__estado_actual != Estados.EST_LISTO:
             print(f'No se puede cambiar al estado del proceso: P{self.__pid}.')
             return
+
+
+
         
+        rafaga = self.__rafaga_cpu
+        if rafaga > Quantum:
+            rafConsumo = self.__rafaga_cpu - Quantum
+            rafaga -= rafConsumo
+            self.rafaga_CPU(rafaga)
+            self.rafaga_CPU_restante(rafConsumo)
+        else:
+            rafaga -= rafaga
+            self.rafaga_CPU(rafaga)
+            self.rafaga_CPU_restante(rafaga)
+
         self.cambio_estado(Estados.EST_EJECUCION)
 
     def bloqueo(self,cant_memoria: int):
-        if self.__estado_actual != Estados.EST_BLOQUEADO:
+        if self.__estado_actual != Estados.EST_EJECUCION:
             print(f'No se puede cambiar al estado del proceso: P{self.__pid}.')
             return
         
         self.cambioTamaño_memoria(cant_memoria)
         self.cambio_estado(Estados.EST_BLOQUEADO)
 
+    def desBloqueo(self):
+            if self.__estado_actual != Estados.EST_BLOQUEADO:
+                print(f'No se puede cambiar al estado del proceso: P{self.__pid}.')
+                return
+            
+            self.cambio_estado(Estados.EST_LISTO)
 
 
-
+    def finalizacion(self):
+        if self.__estado_actual != Estados.EST_EJECUCION:
+            print(f'No se puede cambiar al estado del proceso: P{self.__pid}.')
+            return
+                    
+        self.cambio_estado(Estados.EST_FIN)
 
 
     def salida(self):
@@ -84,15 +114,21 @@ class Proceso:
         print(f"|{'*'*5} Proceso [PID: {self.__pid}] {'*'*5}|")
         print(f"|Estado del proceso: {self.__estado_actual:<9}|")
         print(f'|Tamaño de la memoria: {self.__tamanio_memoria:<7}|')
-        print("Tiempo AT: ", self.__llegada__AT)
+        print(f"|Tiempo AT: {self.__llegada__AT:<18}|")
         print(f'|Ráfaga del CPU: {self.__rafaga_cpu:<13}|')
         print(f'|Ráfaga restante: {self.__rafaga_restante:<11} |')
         print("-"*31)
+        if self.__estado_actual != Estados.EST_FIN:
+            print("                          |                        ")
+            print("                          |                        ")
+            print("                          v                        ")
 
         print()
 
 if __name__ == "__main__":
     # 1. Creación del proceso
+    Quantum = 3
+
     p1 = Proceso(10,45,5)
     p1.salida()
 
@@ -100,10 +136,20 @@ if __name__ == "__main__":
     p1.admicion()
     p1.salida()
     
-    p1.ejecucion()
+    p1.ejecucion(Quantum)
     p1.salida()
 
+    p1.bloqueo(76)
+    p1.salida()
 
+    p1.desBloqueo()
+    p1.salida()
+
+    p1.ejecucion(Quantum)
+    p1.salida()
+
+    p1.finalizacion()
+    p1.salida()
 
 
     
